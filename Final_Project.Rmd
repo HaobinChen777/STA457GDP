@@ -1,0 +1,152 @@
+---
+title: "Final_Project"
+author: "Haobin Chen"
+date: "2021/4/14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### (a)
+```{r}
+library(astsa)
+length(gdp)
+```
+  
+  In this project, focus on analysis of quarterly U.S.GDP from 1947(1) to 2018(3), n=287 observations. The data contains seasonally adjusted real U.S. gross dominant product, in billions. The data was posted on trading economics,(https://tradingeconomics.com/united-states/gdp).
+
+```{r}
+plot(gdp,ylab ="Billions of Dollars",main="Quarterly U.S GDP from 1947(1) to 2018(3)")
+acf2(gdp,main="Sample ACF and PACF of the GDP data, lag in terms of years")
+```
+  
+  From the plot of the data, we see there's a strong upward trend which will cause other influences. From the sample ACF of the data, it does not decay to zero very fast as h increases. Therefore, a slow decay in the sample ACF indicates that doing the differencing may be necessary.
+
+```{r}
+plot(diff(log(gdp)),ylab ="Billions of Dollars",main="GDP growth rate")
+acf2(diff(log(gdp)),main="Sample ACF and PACF of the transformed GDP data, lag in terms of years")
+```
+  
+  Since GDP is an economics value, the reports of these economic indicators are given, it is better to consider in growth rate(in percent change) rather than only the actual or adjusted value. So I consider doing the log transformation conbined with differentiating as my ditrending.
+  
+  After transformation, the data now represent the U.S.quarterly GDP growth rate. Now from the plot of the GDP growth rate, we can see there's no obvious pattern and trend. Also, the data has an average growth rate which is close to 1%. The sample ACF is no longer has slow decay. Therefore, we can conclude that the growth rate appears to be a stable process.
+
+  
+### (b)  
+  From the sample ACF and the PACF plot of the quarterly GDP growth rate, we may conclude that the ACF is cutting off at 2 and the PACF is tailing off. This would suggest that the GDP growth rate follows an ARIMA(0,1,2) model.
+  
+  Also, we may conclude that the PACF is cutting off at 3 and the ACF is tailing off. This would suggest that the GDP growth rate follows an ARIMA(3,1,0) model.
+  
+  Moreover, we can say that the ACF is cutting of at 2 and the PACF is cutting off at 2, which leads an ARIMA(3,1,2) model.
+  
+  Therefore, there are three models on the list: ARIMA(0,1,2), ARIMA(3,1,0) and ARIMA(3,1,2) for our quarterly GDP growth rate data.
+  
+### (c)
+  For ARIMA(0,1,2) model:
+```{r}
+sarima(diff(log(gdp)),0,1,2,no.constant = TRUE)
+```
+  
+  $X_{t}=W_{t}-0.7209W_{t-1}-0.2593W_{t-2}$
+  is our estimated ARIMA(0,1,2) model.
+  
+  The estimated value for $\theta_{1}$ is -0.7209, with p-value of 0 (smaller than 0.05), which is significant. The estimated value for $\theta_{2}$ is -0.2593, with p-value of 0 (smaller than 0.05), which is significant. The constant term is not siginificant due to the p-value larger than 0.05, however, there's no meaning of the constant term in this situation: the quarterly U.S GDP growth rate does not need a staring point or a required certain level to be stays with. So we set no.constant=TRUE here and ignored the constant term.
+  
+
+
+```{r}
+sarima(diff(log(gdp)),3,1,0,no.constant = TRUE)
+```
+  
+  $X_{t}=-0.4564X_{t-1}-0.1752X_{t-2}-0.1430{t-3}+W_{t}$
+  is our estimated ARIMA(3,1,0) model.
+  The estimated value for $\phi_{1}$ is -0.4564, with p-value of 0 (smaller than 0.05), which is significant. The estimated value for $\phi_{2}$ is -0.1752, with p-value of 0.0067 (smaller than 0.05), which is significant. The estimated value for $\phi_{3}$ is -0.1430, with p-value of 0.015 (smaller than 0.05), which is significant. Similarly, the constant term is not siginificant due to the p-value larger than 0.05, And since there's no meaning of the constant term in this situation, we do not consider the constant term here.
+  
+  
+  For ARIMA(3,1,2) model:
+```{r}
+sarima(diff(log(gdp)),3,1,2,no.constant = TRUE)
+```
+  
+  $X_{t}=0.8409X_{t-1}-0.0145X_{t-2}-0.1820X_{t-3}+W_{t}-1.5099W_{t-1}+0.5168W_{t-2}$
+  is our estimated ARIMA(3,1,2) model.
+  The estimated value for $\phi_{1}$ is 0.8409, with p-value of 0.008 (smaller than 0.05), which is significant. The estimated value for $\phi_{2}$ is -0.0145, with p-value of 0.8986 (larger than 0.05), which is not significant. The estimated value for $\phi_{3}$ is -0.1820, with p-value of 0.0023 (smaller than 0.05), which is significant. The estimated value for $\theta_{1}$ is -1.5099, with p-value of 0 (smaller than 0.05), which is significant. The estimated value for $\theta_{2}$ is 0.5168, with p-value of 0.0361 (smaller than 0.05), which is significant. Similarly, the constant term is not siginificant due to the p-value larger than 0.05, And since there's no meaning of the constant term in this situation, we do not consider the constant term here.
+
+
+### (d)
+  
+  
+  Looking at the diagnostic plots for ARIMA(0,1,2) and ARIMA(3,1,0). 
+  
+  The standardized residuals show both have no obvious patterns. Few outliers are exceeding three standard deviations from the mean.
+  
+  The ACF Residuals plots show some spikes at some lags in both cases, but it is not quite enough to be significant at the 5% level. This indicates that no apparent departure from the model the randomness assumption. 
+  
+  The residuals’ normal Q-Q plots show that the assumption of normality is reasonable, except for some possible outliers. Some outliers are detected at the tails which indicate a deviation from normality.
+  
+  The p-values for Ljung-Box statistics seems to be not above the reasonable significant level for all lags in both models. Although the p-values are very close to 0.05, the values are still below the benchmark level. So we need to reconsider whether or not reject the null hypothesis that the residuals are independent. 
+  
+  Overall, the ARIMA(0,1,2) and ARIMA(3,1,0) models’ residuals seems to be iid and normal with mean zero and constant variance. But the p-values for Ljung-Box statistics indicate that the two models are both not the perfect ones.
+  
+  When looking at the the diagnostics for ARIMA(3,1,2), the standard residuals, the ACF residual plots and the residual's normal Q-Q plots are quite similar to the previous two. However, the performance of the p-values for Ljung-Box statistics are much better: most of the p-values are above the reasonable significant level for all lags for both models. Although at some lags the p-values are very close to 0.05, it is in the reasonal range. So we can conclude that the residuals are independent. 
+  
+  Based on these diagnostics, we can see that the ARIMA(3,1,2) have the best performances: the models’ residuals seems to be iid and normal with mean zero and constant variance.   
+  
+  Moreover, from looking at the the AIC, AICc, and BIC, the ARIMA(3,1,2) have the smallest values among the three models. So we select ARIMA(3,1,2) for our further prediction and analysis.
+ 
+### (e)
+```{r}
+pred1 <- sarima.for(gdp,10,3,1,2) #do the prediction of the original data for the next 10 quarters
+upper <- pred1$pred + qnorm(0.975) * pred1$se
+lower <-pred1$pred - qnorm(0.975) * pred1$se #compute the 95% PI
+data.frame("Prediction for Quarterly U.S.GDP))" = pred1$pred,
+            "PI 95% Lower Bound" = lower, "PI 95% Upper Bound" = upper)
+```
+  The above graph is the prediction plot of the Quarterly U.S.GDP data for 10 quarters ahead.
+  
+  The above dataframe is the values of the ten forecasts and the 95% prediction intervals for the 10 forecasts.
+  
+  From the trend of the quarterly U.S GDP from around 1994 to 2018, we can see there's an obvious upward trend with a slight decrease in 2009. The prediction values of the further 10 quarters also has an upward trend, which matches the general trend of the data. And the values of the 10 prediction intervals have no obvious outliers and jumping values, which means the prediction is smooth and proper.
+  
+### (f)
+```{r}
+gdp.per = mvspec(gdp,log = "no")
+```
+  
+  The graph above is the peridogram for our Quarterly U.S GDP data. From the graph, we can see the peaks are mostly gathered close to frequency 0.
+
+```{r}
+order(gdp.per$spec,decreasing = TRUE)[1:3]
+```
+```{r}
+1/gdp.per$freq[c(1,4,3)]
+```
+  
+  The first three predominant periods are 72, 18 and 24 with the top three high spectrum values.
+
+```{r}
+U = qchisq(0.025,2) #compute the chi squre benchmark value of 0.025 with defree of freedom of 2
+L = qchisq(0.975,2) #compute the chi squre benchmark value of 0.975 with defree of freedom of 2
+2*(1/gdp.per$freq[1])/L
+2*(1/gdp.per$freq[1])/U 
+```
+```{r}
+2*(1/gdp.per$freq[4])/L
+2*(1/gdp.per$freq[4])/U 
+```
+
+```{r}
+2*(1/gdp.per$freq[3])/L
+2*(1/gdp.per$freq[3])/U 
+```
+  
+  An approximate 95% confidence interval for the period 72 is (19.51812,2843.848), which is too wide to be of much use. Moreover, the lower value 19.51812 is lower than most of other periodogram ordinate, so we cannot say this value is significant.
+  
+  The approximate 95% confidence intervals for the period 18 and 24 are (4.879531,710.962) and (6.506041,947.9494) repectively, which are also too wide to be of much use. Similarly, their lower values 4.879531 and 6.506041 are also lower than most of other periodogram ordinate, so we cannot say this value is significant.
+  
+  Therefore, all of the three confidence interval are unable to establish significant of the peaks.
+  
+  
+  
+  
